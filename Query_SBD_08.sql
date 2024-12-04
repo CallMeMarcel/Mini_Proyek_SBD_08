@@ -99,6 +99,7 @@ SELECT * FROM Pelanggan;
 SELECT * FROM Pemesanan;
 SELECT * FROM Ulasan;
 
+-- menampilkan daftar kamar hotel yang tersedia (Available)
 SELECT 
     K.ID_Kamar, 
     K.Tipe_kamar, 
@@ -112,6 +113,7 @@ JOIN
 WHERE 
     K.Status = 'Available';
 
+-- mengambil informasi pelanggan tertentu berdasarkan email mereka.
 SELECT 
     ID_Pelanggan, 
     Nama, 
@@ -122,6 +124,7 @@ FROM
 WHERE 
     Email = 'john.doe@example.com';
 
+-- menampilkan riwayat atau detail pemesanan yang dilakukan oleh pelanggan bernama John Doe.
 SELECT 
     P.ID_Pemesanan, 
     PL.Nama AS Nama_Pelanggan, 
@@ -141,6 +144,7 @@ JOIN
 WHERE 
     PL.Nama = 'John Doe';
 
+-- menghitung jumlah kamar yang dimiliki setiap hotel, termasuk hotel yang mungkin belum memiliki kamar
 SELECT 
     H.Nama_Hotel, 
     COUNT(K.ID_Kamar) AS Jumlah_Kamar 
@@ -151,6 +155,7 @@ LEFT JOIN
 GROUP BY 
     H.ID_Hotel, H.Nama_Hotel;
 
+-- menampilkan ulasan-ulasan yang diberikan oleh pelanggan untuk hotel dengan ID 1
 SELECT 
     U.ID_Ulasan, 
     U.Komentar, 
@@ -166,6 +171,7 @@ JOIN
 WHERE 
     H.ID_Hotel = 1;
 
+-- menghitung total pendapatan yang diperoleh setiap hotel dari pemesanan kamar.
 SELECT 
     H.Nama_Hotel, 
     SUM(P.Total_Harga) AS Total_Pendapatan 
@@ -195,3 +201,39 @@ WHERE ID_Pemesanan = 1;
 -- Hapus data ulasan
 DELETE FROM Ulasan
 WHERE ID_Ulasan = 1;
+
+-- View untuk Melihat Semua Pemesanan dengan Nama Pelanggan dan Nama Kamar
+CREATE VIEW Pemesanan_Detail AS
+SELECT
+    P.ID_Pemesanan, P.Tgl_masuk, P.Tgl_keluar, P.Total_Harga,
+    Pl.Nama AS Nama_Pelanggan, K.Tipe_Kamar, K.Harga
+FROM
+    Pemesanan P
+JOIN Pelanggan Pl ON P.ID_Pelanggan = Pl.ID_Pelanggan
+JOIN Kamar K ON P.ID_Kamar = K.ID_Kamar;
+
+SELECT * FROM Pemesanan_Detail;
+
+-- Fungsi View untuk menampilkan daftar kamar yang tersedia beserta informasi hotel terkait
+CREATE VIEW Available_Rooms AS
+SELECT 
+    K.ID_Kamar, K.Tipe_Kamar, K.Harga, H.Nama_Hotel, H.Kota
+FROM 
+    Kamar AS K
+JOIN 
+    Hotel AS H ON K.ID_Hotel = H.ID_Hotel
+WHERE 
+    K.Status = 'Available';
+
+SELECT * FROM Available_Rooms;
+
+--  View untuk Melihat Semua Kamar yang Dipesan oleh Pelanggan
+CREATE VIEW Kamar_Dipesan AS
+SELECT
+    K.ID_Kamar, K.Tipe_Kamar, K.Status, P.Tgl_masuk, P.Tgl_keluar, P.Total_Harga
+FROM
+    Kamar K
+JOIN Pemesanan P ON K.ID_Kamar = P.ID_Kamar
+WHERE K.Status = 'Booked';
+
+SELECT * FROM Kamar_Dipesan;
