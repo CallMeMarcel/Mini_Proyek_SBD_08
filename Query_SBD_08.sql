@@ -1,4 +1,7 @@
--- Schema Creation
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------- Schema Creation --------------- Schema Creation --------------- Schema Creation --------------- Schema Creation --------------- Schema Creation 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- Tabel Hotel
 CREATE TABLE Hotel (
@@ -50,6 +53,10 @@ CREATE TABLE Ulasan (
     CONSTRAINT FK_Pelanggan_Ulasan FOREIGN KEY (ID_Pelanggan) REFERENCES Pelanggan(ID_Pelanggan) ON DELETE CASCADE
 );  
 
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------- INSERT DATA --------- INSERT DATA --------- INSERT DATA --------- INSERT DATA --------- INSERT DATA --------- INSERT DATA --------- INSERT DATA 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- Insert data ke tabel Hotel
 INSERT INTO Hotel (Nama_Hotel, Alamat, Kota, Telepon) VALUES
 ('Hotel Bintang Lima', 'Jl. Sudirman No.1', 'Jakarta', '02112345678'),
@@ -92,6 +99,9 @@ INSERT INTO Ulasan (ID_Hotel, ID_Pelanggan, Tgl_Ulasan, Komentar) VALUES
 (5, 5, '2024-12-26', 'Fasilitas lengkap dan harga sesuai.');
 
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------ SEGMENT DATA AND MODIFY DATA ------------ SEGMENT DATA AND MODIFY DATA ------------ SEGMENT DATA AND MODIFY DATA ------------ SEGMENT DATA AND MODIFY DATA 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 SELECT * FROM Hotel;j,i;
 SELECT * FROM Kamar;
@@ -121,8 +131,8 @@ FROM
     Pelanggan
 WHERE 
     Email = 'john.doe@example.com';
-
 SELECT 
+
     P.ID_Pemesanan, 
     PL.Nama AS Nama_Pelanggan, 
     K.Tipe_kamar, 
@@ -192,6 +202,180 @@ WHERE ID_Pelanggan = 1;
 DELETE FROM Pemesanan
 WHERE ID_Pemesanan = 1;
 
+-- Hapus data kamar
+DELETE FROM Kamar;
+
 -- Hapus data ulasan
 DELETE FROM Ulasan
 WHERE ID_Ulasan = 1;
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------- VIEW --------------- VIEW --------------- VIEW --------------- VIEW --------------- VIEW --------------- VIEW --------------- VIEW 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- View untuk Melihat Semua Pemesanan dengan Nama Pelanggan dan tipe Kamar
+CREATE VIEW Pemesanan_Detail AS
+SELECT
+    P.ID_Pemesanan, P.Tgl_masuk, P.Tgl_keluar, P.Total_Harga,
+    Pl.Nama AS Nama_Pelanggan, K.Tipe_Kamar, K.Harga
+FROM
+    Pemesanan P
+JOIN Pelanggan Pl ON P.ID_Pelanggan = Pl.ID_Pelanggan
+JOIN Kamar K ON P.ID_Kamar = K.ID_Kamar;
+
+SELECT * FROM Pemesanan_Detail;
+
+-- Fungsi View untuk menampilkan daftar tipe kamar yang tersedia beserta informasi hotel terkait
+CREATE VIEW Available_Rooms AS
+SELECT 
+    K.ID_Kamar, K.Tipe_Kamar, K.Harga, H.Nama_Hotel, H.Kota
+FROM 
+    Kamar AS K
+JOIN 
+    Hotel AS H ON K.ID_Hotel = H.ID_Hotel
+WHERE 
+    K.Status = 'Available';
+
+SELECT * FROM Available_Rooms;
+
+--  View untuk Melihat Semua Kamar yang Dipesan oleh Pelanggan
+CREATE VIEW Kamar_Dipesan AS
+SELECT
+    K.ID_Kamar, K.Tipe_Kamar, K.Status, P.Tgl_masuk, P.Tgl_keluar, P.Total_Harga
+FROM
+    Kamar AS K
+JOIN Pemesanan P ON K.ID_Kamar = P.ID_Kamar
+WHERE K.Status = 'Booked';
+
+DROP VIEW Kamar_Dipesan;
+
+Select * from kamar;
+SELECT * FROM Kamar_Dipesan;
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------- TRANSACTION ---------------- TRANSACTION ---------------- TRANSACTION ---------------- TRANSACTION ---------------- TRANSACTION 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Memulai transaksi untuk memperbarui harga kamar dan menghapus pemesanan
+BEGIN;
+-- Update harga kamar menjadi lebih mahal
+UPDATE Kamar
+SET Harga = 1200000
+WHERE ID_Kamar = 8;
+-- Hapus pemesanan yang terkait dengan kamar yang diupdate
+DELETE FROM Pemesanan
+WHERE ID_Kamar = 8;
+-- Jika semua operasi berhasil, lakukan commit
+COMMIT;
+
+
+-- Memulai transaksi untuk menambah pemesanan baru dan ulasan
+BEGIN;
+-- Insert pemesanan baru untuk pelanggan dengan ID 4 dan kamar dengan ID 5
+INSERT INTO Pemesanan (ID_Pelanggan, ID_Kamar, Tgl_masuk, Tgl_keluar, Total_Harga)
+VALUES (4, 8, '2024-12-01', '2024-12-03', 2700000);
+-- Insert ulasan untuk hotel dengan ID 3 dari pelanggan ID 4
+INSERT INTO Ulasan (ID_Hotel, ID_Pelanggan, Tgl_Ulasan, Komentar)
+VALUES (3, 9, '2024-12-15', 'Kamar sangat nyaman, tetapi proses check-in lambat.');
+-- Jika semua operasi berhasil, lakukan commit
+COMMIT;
+
+
+-- Memulai transaksi untuk memperbarui status pemesanan dan menghapus ulasan
+BEGIN;
+-- Update status pemesanan untuk pelanggan dengan ID 2 menjadi 'Canceled'
+UPDATE Pemesanan
+SET Total_Harga = 0
+WHERE ID_Pemesanan = 12;
+-- Hapus ulasan yang diberikan oleh pelanggan dengan ID 3
+DELETE FROM Ulasan
+WHERE ID_Pelanggan = 3 AND ID_Hotel = 2;
+-- Jika semua operasi berhasil, lakukan commit
+COMMIT;
+
+-- Memulai transaksi untuk memperbarui status kamar dan membuat pemesanan baru
+BEGIN;
+-- Update status kamar menjadi 'Available' setelah dibersihkan
+UPDATE Kamar
+SET Status = 'Available'
+WHERE ID_Kamar = 7;
+-- Insert pemesanan baru setelah kamar tersedia
+INSERT INTO Pemesanan (ID_Pelanggan, ID_Kamar, Tgl_masuk, Tgl_keluar, Total_Harga)
+VALUES (5, 7, '2024-12-10', '2024-12-15', 2500000);
+-- Jika semua operasi berhasil, lakukan commit
+COMMIT;
+
+Rollback;
+
+-- Cek data 
+select * from hotel;
+select * from kamar;
+select * from pelanggan;
+select * from pemesanan;
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------- STORED PROSEDUR ---------------- STORED PROSEDUR ---------------- STORED PROSEDUR ---------------- STORED PROSEDUR ---------------- STORED PROSEDUR 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DROP FUNCTION BuatPesan;
+
+-- Stored Procedur untuk menangani pemesanan kamar dan menghitung total harga berdasarkan tangal masuk dan keluar
+CREATE OR REPLACE FUNCTION BuatPesan(
+    pidPel INT,
+    pidKam INT,
+    tglIn DATE,
+    tglOut DATE
+)
+RETURNS VOID AS $$
+DECLARE
+    hargaKamar DECIMAL(10, 2);
+    lamaInap INT;
+    totalHarga DECIMAL(10, 2);
+BEGIN
+    RAISE NOTICE 'Menjalankan fungsi BuatPesan untuk pelanggan % dengan kamar %', pidPel, pidKam;
+
+    -- Validasi apakah kamar tersedia
+    IF NOT EXISTS (
+        SELECT 1 FROM Kamar WHERE ID_Kamar = pidKam AND Status = 'Available'
+    ) THEN
+        RAISE EXCEPTION 'Kamar dengan ID % tidak tersedia atau tidak ditemukan.', pidKam;
+    END IF;
+
+    -- Ambil harga kamar dari tabel Kamar
+    SELECT Harga INTO hargaKamar
+    FROM Kamar
+    WHERE ID_Kamar = pidKam;
+
+    -- Hitung lama menginap
+    lamaInap := tglOut - tglIn;
+
+    -- Hitung total harga
+    totalHarga := hargaKamar * lamaInap;
+
+    -- Masukkan data pemesanan ke tabel Pemesanan
+    INSERT INTO Pemesanan (ID_Pelanggan, ID_Kamar, Tgl_masuk, Tgl_keluar, Total_Harga)
+    VALUES (pidPel, pidKam, tglIn, tglOut, totalHarga);
+
+    -- Update status kamar menjadi 'Terisi'
+    UPDATE Kamar
+    SET Status = 'Terisi'
+    WHERE ID_Kamar = pidKam;
+
+    -- Mengeluarkan notice
+    RAISE NOTICE 'Pemesanan berhasil, total harga: %', totalHarga;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- memanggil prosedur
+SELECT BuatPesan(1, 7, '2024-12-1', '2024-12-15');
+
+
+-- melihat data yang masuk
+SELECT * FROM Pemesanan;
+
+
+
+
+
+
